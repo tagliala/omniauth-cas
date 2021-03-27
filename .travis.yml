@@ -1,6 +1,9 @@
 dist: xenial
 os: linux
 language: ruby
+gemfile:
+  - gemfiles/omniauth_1.gemfile
+  - gemfiles/omniauth_2.gemfile
 rvm:
   - 2.1
   - 2.2
@@ -17,5 +20,8 @@ before_install:
   - gem uninstall -v '>= 2' -i $(rvm gemdir)@global -ax bundler || true
   - gem install bundler -v '< 2'
 jobs:
+  exclude:
+    - rvm: 2.1
+      gemfile: gemfiles/omniauth_1.gemfile
   allow_failures:
   - rvm: ruby-edge
