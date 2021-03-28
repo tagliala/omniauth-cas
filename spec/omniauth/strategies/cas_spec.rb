@@ -26,10 +26,10 @@ describe OmniAuth::Strategies::CAS, type: :strategy do
   end
 
   # TODO: Verify that these are even useful tests
-  shared_examples_for 'a CAS redirect response' do
+  shared_examples_for 'a CAS redirect response' do |http_method = :post|
     let(:redirect_params) { 'service=' + Rack::Utils.escape("http://example.org/auth/cas/callback?url=#{Rack::Utils.escape(return_url)}") }
 
-    before { post url, nil, request_env }
+    before { send(http_method, url, nil, request_env) }
 
     subject { last_response }
 
@@ -86,6 +86,34 @@ describe OmniAuth::Strategies::CAS, type: :strategy do
     subject { MyCasProvider.default_options.to_hash }
 
     it { should include('ssl' => true) }
+  end
+
+  if OmniAuth::VERSION < '2'
+    describe 'GET /auth/cas' do
+      let(:return_url) { 'http://myapp.com/admin/foo' }
+
+      context 'with a referer' do
+        let(:url) { '/auth/cas' }
+
+        let(:request_env) { { 'HTTP_REFERER' => return_url } }
+
+        it_behaves_like 'a CAS redirect response', :get
+      end
+    end
+
+    describe 'GET /auth/cas/callback' do
+      context 'without a ticket' do
+        before { get '/auth/cas/callback' }
+
+        subject { last_response }
+
+        it { should be_redirect }
+
+        it 'redirects with a failure message' do
+          expect(subject.headers).to include 'Location' => '/auth/failure?message=no_ticket&strategy=cas'
+        end
+      end
+    end
   end
 
   describe 'POST /auth/cas' do
